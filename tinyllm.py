@@ -42,3 +42,41 @@ print(encode("hello there"), decode(encode("hello there")))
 
 # %%
 data = torch.tensor(encode(text), dtype=torch.long)
+
+# %%
+print(data.shape, data.dtype)
+
+print(data[:100])
+
+# %%
+N = int(0.9 * len(data))
+
+# split the data into training and validation
+
+train_data = data[:N]
+validation = data[N:]
+
+# %%
+
+# this basically determines how much the LM can "remember". when training/infering, only the previous BLOCK_SIZE-1 characters are used
+
+BLOCK_SIZE = 8  # context length
+
+# %%
+
+# there are BLOCK_SIZE-1 "examples" in BLOCK_SIZE characters, so we add +1
+print("data:", train_data[: BLOCK_SIZE + 1].tolist())
+
+x = train_data[:BLOCK_SIZE]
+y = train_data[1 : BLOCK_SIZE + 1]
+
+for t in range(BLOCK_SIZE):
+    context = x[: t + 1]
+    target = y[t]
+    print(f"when context: {context.tolist()}, target: {target}")
+
+# %%
+
+torch.manual_seed(1337)
+BATCH_SIZE = 4
+BLOCK_SIZE = 8
