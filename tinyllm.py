@@ -54,15 +54,13 @@ N = int(0.9 * len(data))
 # split the data into training and validation
 
 train_data = data[:N]
-validation = data[N:]
+val_data = data[N:]
 
 # %%
 
 # this basically determines how much the LM can "remember". when training/infering, only the previous BLOCK_SIZE-1 characters are used
 
 BLOCK_SIZE = 8  # context length
-
-# %%
 
 # there are BLOCK_SIZE-1 "examples" in BLOCK_SIZE characters, so we add +1
 print("data:", train_data[: BLOCK_SIZE + 1].tolist())
@@ -80,3 +78,31 @@ for t in range(BLOCK_SIZE):
 torch.manual_seed(1337)
 BATCH_SIZE = 4
 BLOCK_SIZE = 8
+
+
+def get_batch(train: bool):
+    # generate a random batch of data, returns inputs x and targets y
+    data = train_data if train else val_data
+    idx = torch.randint(low=0, high=len(data) - BLOCK_SIZE, size=(BATCH_SIZE,))
+
+    # first BLOCK_SIZE characters, starting at i
+    x = torch.stack([data[i : i + BLOCK_SIZE] for i in idx])
+    # offset by 1
+    y = torch.stack([data[i + 1 : i + BLOCK_SIZE + 1] for i in idx])
+    return (x, y)
+
+
+xb, yb = get_batch(train=True)
+print(f"inputs: {xb.shape} => {xb}")
+print(f"targets: {yb.shape} => {yb}")
+
+for b in range(BATCH_SIZE):  # batch dim
+    for t in range(BLOCK_SIZE):  # time dim
+        context = xb[b, : t + 1]
+        target = yb[b, t]
+        print(f"when input: {context.tolist()} target: {target}")
+
+
+# %%
+
+print(f"input to the transformer: {xb}")
