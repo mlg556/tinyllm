@@ -1,5 +1,8 @@
 # %%
 import torch
+import torch.nn as nn
+import numpy as np
+from torch.nn import functional as F
 
 # %%
 # tinyshakespeare from https://github.com/karpathy/char-rnn/blob/master/data/tinyshakespeare/input.txt
@@ -11,9 +14,10 @@ with open(fname_inp, "r") as f:
 
 # %%
 alphabet = sorted(set(text))
+vocab_size = len(alphabet)
 
 print(
-    f"{len(text):_} chars. alphabet is: '{''.join(alphabet)}' with len={len(alphabet)} \ntext start: \n-------------\n{text[:200]}"
+    f"{len(text):_} chars. alphabet is: '{''.join(alphabet)}' with len={vocab_size} \ntext start: \n-------------\n{text[:200]}"
 )
 
 # %%
@@ -106,3 +110,38 @@ for b in range(BATCH_SIZE):  # batch dim
 # %%
 
 print(f"input to the transformer: {xb}")
+
+
+# %%
+class BigramLanguageModel(nn.Module):
+    token_embedding_table: nn.Embedding
+
+    def __init__(self, vocab_size):
+        super().__init__()
+        # each token directly reads off the logits from the lookup table
+        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
+
+    def forward(self, idx, targets):
+        # idx and targets are both (B,T) tensors of integers
+        logits = self.token_embedding_table(idx)  # (B,T,C)
+
+        # reshape for cross_entropy
+        B, T, C = logits.shape
+        logits = logits.view(B * T, C)
+
+        targets = targets.view(B * T)
+
+        loss = F.cross_entropy(logits, targets)
+
+        return logits, loss
+
+
+# %%
+
+torch.manual_seed(1337)
+
+m = BigramLanguageModel(vocab_size)
+logits, loss = m(xb, yb)
+print(f"shape: {logits.shape} | loss: {loss}")
+
+# %%
